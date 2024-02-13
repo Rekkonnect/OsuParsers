@@ -1,8 +1,7 @@
-namespace OsuParsers.Enums.Beatmaps
+namespace OsuParsers.Enums.Beatmaps;
+
+public enum TaikoColor
 {
-    public enum TaikoColor
-    {
-        Red,
-        Blue
-    }
+    Red,
+    Blue
 }

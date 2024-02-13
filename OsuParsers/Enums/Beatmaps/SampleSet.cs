@@ -1,10 +1,9 @@
-namespace OsuParsers.Enums.Beatmaps
+namespace OsuParsers.Enums.Beatmaps;
+
+public enum SampleSet
 {
-    public enum SampleSet
-    {
-        None = 0,
-        Normal = 1,
-        Soft = 2,
-        Drum = 3
-    }
+    None = 0,
+    Normal = 1,
+    Soft = 2,
+    Drum = 3
 }

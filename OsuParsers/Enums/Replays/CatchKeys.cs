@@ -1,8 +1,7 @@
-﻿namespace OsuParsers.Enums.Replays
+﻿namespace OsuParsers.Enums.Replays;
+
+public enum CatchKeys
 {
-    public enum CatchKeys
-    {
-        None = 0,
-        Dash = 1 << 0,
-    }
+    None = 0,
+    Dash = 1 << 0,
 }

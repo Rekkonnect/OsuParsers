@@ -1,11 +1,10 @@
-namespace OsuParsers.Enums.Beatmaps
+namespace OsuParsers.Enums.Beatmaps;
+
+public enum HitSoundType
 {
-    public enum HitSoundType
-    {
-        None = 0,
-        Normal = 1,
-        Whistle = 2,
-        Finish = 4,
-        Clap = 8
-    }
+    None = 0,
+    Normal = 1,
+    Whistle = 2,
+    Finish = 4,
+    Clap = 8
 }

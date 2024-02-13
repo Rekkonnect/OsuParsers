@@ -1,10 +1,9 @@
-namespace OsuParsers.Enums
+namespace OsuParsers.Enums;
+
+public enum Ruleset
 {
-    public enum Ruleset
-    {
-        Standard = 0,
-        Taiko = 1,
-        Fruits = 2,
-        Mania = 3
-    }
+    Standard = 0,
+    Taiko = 1,
+    Fruits = 2,
+    Mania = 3
 }

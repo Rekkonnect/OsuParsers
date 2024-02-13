@@ -1,8 +1,7 @@
-﻿namespace OsuParsers.Enums.Beatmaps
+﻿namespace OsuParsers.Enums.Beatmaps;
+
+public enum TimeSignature
 {
-    public enum TimeSignature
-    {
-        SimpleQuadruple = 4,
-        SimpleTriple = 3
-    }
+    SimpleQuadruple = 4,
+    SimpleTriple = 3
 }

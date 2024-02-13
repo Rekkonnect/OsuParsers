@@ -1,9 +1,8 @@
-﻿namespace OsuParsers.Enums.Beatmaps
+﻿namespace OsuParsers.Enums.Beatmaps;
+
+public enum Effects
 {
-    public enum Effects
-    {
-        None = 0,
-        Kiai = 1,
-        OmitFirstBarLine = 8
-    }
+    None = 0,
+    Kiai = 1,
+    OmitFirstBarLine = 8
 }

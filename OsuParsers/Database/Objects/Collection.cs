@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 
-namespace OsuParsers.Database.Objects
+namespace OsuParsers.Database.Objects;
+
+public class Collection
 {
-    public class Collection
-    {
-        public string Name { get; set; }
-        public int Count { get; set; }
-        public List<string> MD5Hashes { get; private set; } = new List<string>();
-    }
+    public string Name { get; set; }
+    public int Count { get; set; }
+    public List<string> MD5Hashes { get; private set; } = new List<string>();
 }

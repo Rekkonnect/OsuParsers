@@ -1,16 +1,15 @@
-﻿namespace OsuParsers.Enums.Database
+﻿namespace OsuParsers.Enums.Database;
+
+public enum Grade
 {
-    public enum Grade
-    {
-        XH, //Silver SS
-        SH, //Silver S
-        X, //SS
-        S,
-        A,
-        B,
-        C,
-        D,
-        F, //Fail
-        N //None
-    }
+    XH, //Silver SS
+    SH, //Silver S
+    X, //SS
+    S,
+    A,
+    B,
+    C,
+    D,
+    F, //Fail
+    N //None
 }

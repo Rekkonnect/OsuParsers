@@ -1,10 +1,9 @@
-namespace OsuParsers.Enums.Beatmaps
+namespace OsuParsers.Enums.Beatmaps;
+
+public enum CurveType
 {
-    public enum CurveType
-    {
-        Catmull,
-        Bezier,
-        Linear,
-        PerfectCurve
-    }
+    Catmull,
+    Bezier,
+    Linear,
+    PerfectCurve
 }

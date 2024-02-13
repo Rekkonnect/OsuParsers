@@ -1,12 +1,11 @@
-﻿namespace OsuParsers.Enums.Storyboards
+﻿namespace OsuParsers.Enums.Storyboards;
+
+public enum StoryboardLayer
 {
-    public enum StoryboardLayer
-    {
-        Background,
-        Fail,
-        Pass,
-        Foreground,
-        Overlay,
-        Samples
-    }
+    Background,
+    Fail,
+    Pass,
+    Foreground,
+    Overlay,
+    Samples
 }

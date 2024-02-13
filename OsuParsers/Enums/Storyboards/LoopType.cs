@@ -1,8 +1,7 @@
-﻿namespace OsuParsers.Enums.Storyboards
+﻿namespace OsuParsers.Enums.Storyboards;
+
+public enum LoopType
 {
-    public enum LoopType
-    {
-        LoopForever,
-        LoopOnce
-    }
+    LoopForever,
+    LoopOnce
 }

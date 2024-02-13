@@ -1,20 +1,19 @@
-namespace OsuParsers.Enums
+namespace OsuParsers.Enums;
+
+internal enum FileSections
 {
-    internal enum FileSections
-    {
-        None,
-        Format,
-        General,
-        Editor,
-        Metadata,
-        Difficulty,
-        Events,
-        TimingPoints,
-        Colours,
-        HitObjects,
-        //skin.ini sections
-        Fonts,
-        CatchTheBeat,
-        Mania
-    }
+    None,
+    Format,
+    General,
+    Editor,
+    Metadata,
+    Difficulty,
+    Events,
+    TimingPoints,
+    Colours,
+    HitObjects,
+    //skin.ini sections
+    Fonts,
+    CatchTheBeat,
+    Mania
 }

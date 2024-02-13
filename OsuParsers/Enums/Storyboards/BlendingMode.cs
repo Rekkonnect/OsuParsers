@@ -1,8 +1,7 @@
-﻿namespace OsuParsers.Enums.Storyboards
+﻿namespace OsuParsers.Enums.Storyboards;
+
+public enum BlendingMode
 {
-    public enum BlendingMode
-    {
-        AdditiveBlending,
-        AlphaBlending
-    }
+    AdditiveBlending,
+    AlphaBlending
 }

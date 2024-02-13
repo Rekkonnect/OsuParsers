@@ -1,9 +1,8 @@
 ﻿using OsuParsers.Storyboards.Commands;
 
-namespace OsuParsers.Storyboards.Interfaces
+namespace OsuParsers.Storyboards.Interfaces;
+
+public interface IHasCommands
 {
-    public interface IHasCommands
-    {
-        CommandGroup Commands { get; }
-    }
+    CommandGroup Commands { get; }
 }

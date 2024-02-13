@@ -1,7 +1,6 @@
-﻿namespace OsuParsers.Storyboards.Interfaces
+﻿namespace OsuParsers.Storyboards.Interfaces;
+
+public interface IStoryboardObject
 {
-    public interface IStoryboardObject
-    {
-        string FilePath { get; }
-    }
+    string FilePath { get; }
 }

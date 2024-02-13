@@ -1,16 +1,15 @@
-﻿namespace OsuParsers.Enums.Storyboards
+﻿namespace OsuParsers.Enums.Storyboards;
+
+public enum Origins
 {
-    public enum Origins
-    {
-        TopLeft,
-        Centre,
-        CentreLeft,
-        TopRight,
-        BottomCentre,
-        TopCentre,
-        Custom,
-        CentreRight,
-        BottomLeft,
-        BottomRight
-    }
+    TopLeft,
+    Centre,
+    CentreLeft,
+    TopRight,
+    BottomCentre,
+    TopCentre,
+    Custom,
+    CentreRight,
+    BottomLeft,
+    BottomRight
 }

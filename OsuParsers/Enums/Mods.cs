@@ -1,5 +1,8 @@
-﻿namespace OsuParsers.Enums;
+﻿using System;
 
+namespace OsuParsers.Enums;
+
+[Flags]
 public enum Mods
 {
     None = 0,

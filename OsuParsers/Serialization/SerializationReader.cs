@@ -7,28 +7,34 @@ namespace OsuParsers.Serialization;
 
 internal class SerializationReader : BinaryReader
 {
-    public SerializationReader(Stream s) : base(s, Encoding.UTF8) { }
+    public SerializationReader(Stream s)
+        : base(s, Encoding.UTF8) { }
 
     public override string ReadString()
     {
-        if (0 == ReadByte()) return null;
+        if (0 == ReadByte())
+            return null;
         return base.ReadString();
     }
 
     public byte[] ReadByteArray()
     {
         int len = ReadInt32();
-        if (len > 0) return ReadBytes(len);
-        if (len < 0) return null;
-        return new byte[] { };
+        if (len > 0)
+            return ReadBytes(len);
+        if (len < 0)
+            return null;
+        return [];
     }
 
     public char[] ReadCharArray()
     {
         int len = ReadInt32();
-        if (len > 0) return ReadChars(len);
-        if (len < 0) return null;
-        return new char[] { };
+        if (len > 0)
+            return ReadChars(len);
+        if (len < 0)
+            return null;
+        return [];
     }
 
     public DateTime ReadDateTime()
@@ -43,18 +49,31 @@ internal class SerializationReader : BinaryReader
     public List<T> ReadList<T>()
     {
         int count = ReadInt32();
-        if (count < 0) return null;
-        List<T> d = new List<T>(count);
-        for (int i = 0; i < count; i++) d.Add((T)ReadObject());
+        if (count < 0)
+            return null;
+        var d = new List<T>(count);
+        for (int i = 0; i < count; i++)
+        {
+            var value = (T)ReadObject();
+            d.Add(value);
+        }
+
         return d;
     }
 
     public Dictionary<T, U> ReadDictionary<T, U>()
     {
         int count = ReadInt32();
-        if (count < 0) return null;
-        Dictionary<T, U> d = new Dictionary<T, U>();
-        for (int i = 0; i < count; i++) d[(T)ReadObject()] = (U)ReadObject();
+        if (count < 0)
+            return null;
+        var d = new Dictionary<T, U>();
+        for (int i = 0; i < count; i++)
+        {
+            var key = (T)ReadObject();
+            var value = (U)ReadObject();
+            d[key] = value;
+        }
+
         return d;
     }
 

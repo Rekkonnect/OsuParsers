@@ -85,10 +85,12 @@ public static class DatabaseDecoder
                 int timingPointsCount = r.ReadInt32();
                 for (int j = 0; j < timingPointsCount; j++)
                 {
-                    DbTimingPoint timingPoint = new DbTimingPoint();
-                    timingPoint.BPM = r.ReadDouble();
-                    timingPoint.Offset = r.ReadDouble();
-                    timingPoint.Inherited = !r.ReadBoolean();
+                    var timingPoint = new DbTimingPoint
+                    {
+                        BPM = r.ReadDouble(),
+                        Offset = r.ReadDouble(),
+                        Inherited = !r.ReadBoolean()
+                    };
                     beatmap.TimingPoints.Add(timingPoint);
                 }
 

@@ -1,6 +1,6 @@
 ﻿namespace OsuParsers.Database.Objects;
 
-public class DbTimingPoint
+public struct DbTimingPoint
 {
     public double BPM { get; set; }
     public double Offset { get; set; }

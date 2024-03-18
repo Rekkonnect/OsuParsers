@@ -1,4 +1,5 @@
-﻿using OsuParsers.Beatmaps;
+﻿using Garyon.Extensions;
+using OsuParsers.Beatmaps;
 using OsuParsers.Beatmaps.Objects;
 using OsuParsers.Beatmaps.Objects.Catch;
 using OsuParsers.Beatmaps.Objects.Mania;
@@ -9,10 +10,12 @@ using OsuParsers.Enums.Beatmaps;
 using OsuParsers.Enums.Storyboards;
 using OsuParsers.Helpers;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace OsuParsers.Decoders;
 
@@ -21,6 +24,21 @@ public static class BeatmapDecoder
     private static Beatmap Beatmap;
     private static FileSections currentSection = FileSections.None;
     private static List<string> sbLines = new List<string>();
+
+    /// <summary>
+    /// Parses .osu file.
+    /// </summary>
+    /// <param name="fileInfo">Path to the .osu file.</param>
+    /// <returns>A usable beatmap.</returns>
+    public static Beatmap Decode(FileInfo fileInfo)
+    {
+        if (!fileInfo.Exists)
+        {
+            throw new FileNotFoundException();
+        }
+
+        return Decode(File.ReadAllLines(fileInfo.FullName));
+    }
 
     /// <summary>
     /// Parses .osu file.
@@ -72,8 +90,9 @@ public static class BeatmapDecoder
         {
             if (!string.IsNullOrWhiteSpace(line) && !line.StartsWith("//"))
             {
-                if (ParseHelper.GetCurrentSection(line) != FileSections.None)
-                    currentSection = ParseHelper.GetCurrentSection(line);
+                var parsedSection = ParseHelper.GetCurrentSection(line);
+                if (parsedSection is not FileSections.None)
+                    currentSection = parsedSection;
                 else if (ParseHelper.IsLineValid(line, currentSection))
                     ParseLine(line);
             }
@@ -85,7 +104,7 @@ public static class BeatmapDecoder
         Beatmap.GeneralSection.SlidersCount = Beatmap.HitObjects.Count(c => c is ISliderHitObject);
         Beatmap.GeneralSection.SpinnersCount = Beatmap.HitObjects.Count(c => c is ISpinnerHitObject);
 
-        Beatmap.GeneralSection.Length = Beatmap.HitObjects.Any() ? Beatmap.HitObjects.Last().EndTime : 0;
+        Beatmap.GeneralSection.Length = Beatmap.HitObjects.LastOrDefault()?.EndTime ?? 0;
 
         return Beatmap;
     }
@@ -133,127 +152,159 @@ public static class BeatmapDecoder
 
     private static void ParseGeneral(string line)
     {
-        int index = line.IndexOf(':');
-        string variable = line.Remove(index).Trim();
-        string value = line.Remove(0, index + 1).Trim();
+        line.AsSpan().SplitOnce(':', out var variable, out var value);
+
+        switch (variable)
+        {
+            case "AudioLeadIn":
+                Beatmap.GeneralSection.AudioLeadIn = value.ParseInt32();
+                return;
+            case "PreviewTime":
+                Beatmap.GeneralSection.PreviewTime = value.ParseInt32();
+                return;
+            case "Countdown":
+                Beatmap.GeneralSection.Countdown = ParseHelper.ToBool(value);
+                return;
+            case "StackLeniency":
+                Beatmap.GeneralSection.StackLeniency = ParseHelper.ToDouble(value);
+                return;
+            case "Mode":
+                int modeId = value.ParseInt32();
+                Beatmap.GeneralSection.ModeId = modeId;
+                Beatmap.GeneralSection.Mode = (Ruleset)modeId;
+                return;
+            case "LetterboxInBreaks":
+                Beatmap.GeneralSection.LetterboxInBreaks = ParseHelper.ToBool(value);
+                return;
+            case "WidescreenStoryboard":
+                Beatmap.GeneralSection.WidescreenStoryboard = ParseHelper.ToBool(value);
+                return;
+            case "StoryFireInFront":
+                Beatmap.GeneralSection.StoryFireInFront = ParseHelper.ToBool(value);
+                return;
+            case "SpecialStyle":
+                Beatmap.GeneralSection.SpecialStyle = ParseHelper.ToBool(value);
+                return;
+            case "EpilepsyWarning":
+                Beatmap.GeneralSection.EpilepsyWarning = ParseHelper.ToBool(value);
+                return;
+            case "UseSkinSprites":
+                Beatmap.GeneralSection.UseSkinSprites = ParseHelper.ToBool(value);
+                return;
+        }
+
+        var valueString = value.ToString();
 
         switch (variable)
         {
             case "AudioFilename":
-                Beatmap.GeneralSection.AudioFilename = value;
-                break;
-            case "AudioLeadIn":
-                Beatmap.GeneralSection.AudioLeadIn = Convert.ToInt32(value);
-                break;
-            case "PreviewTime":
-                Beatmap.GeneralSection.PreviewTime = Convert.ToInt32(value);
-                break;
-            case "Countdown":
-                Beatmap.GeneralSection.Countdown = ParseHelper.ToBool(value);
+                Beatmap.GeneralSection.AudioFilename = valueString;
                 break;
             case "SampleSet":
-                Beatmap.GeneralSection.SampleSet = (SampleSet)Enum.Parse(typeof(SampleSet), value);
-                break;
-            case "StackLeniency":
-                Beatmap.GeneralSection.StackLeniency = ParseHelper.ToDouble(value);
-                break;
-            case "Mode":
-                Beatmap.GeneralSection.Mode = (Ruleset)Enum.Parse(typeof(Ruleset), value);
-                Beatmap.GeneralSection.ModeId = Convert.ToInt32(value);
-                break;
-            case "LetterboxInBreaks":
-                Beatmap.GeneralSection.LetterboxInBreaks = ParseHelper.ToBool(value);
-                break;
-            case "WidescreenStoryboard":
-                Beatmap.GeneralSection.WidescreenStoryboard = ParseHelper.ToBool(value);
-                break;
-            case "StoryFireInFront":
-                Beatmap.GeneralSection.StoryFireInFront = ParseHelper.ToBool(value);
-                break;
-            case "SpecialStyle":
-                Beatmap.GeneralSection.SpecialStyle = ParseHelper.ToBool(value);
-                break;
-            case "EpilepsyWarning":
-                Beatmap.GeneralSection.EpilepsyWarning = ParseHelper.ToBool(value);
-                break;
-            case "UseSkinSprites":
-                Beatmap.GeneralSection.UseSkinSprites = ParseHelper.ToBool(value);
+                Beatmap.GeneralSection.SampleSet = Enum.Parse<SampleSet>(valueString);
                 break;
         }
     }
 
     private static void ParseEditor(string line)
     {
-        int index = line.IndexOf(':');
-        string variable = line.Remove(index).Trim();
-        string value = line.Remove(0, index + 1).Trim();
+        line.AsSpan().SplitOnce(':', out var variable, out var value);
+
+        // quickly rule out the need to convert the span into a new string
+        switch (variable)
+        {
+            case "DistanceSpacing":
+                Beatmap.EditorSection.DistanceSpacing = ParseHelper.ToDouble(value);
+                return;
+            case "BeatDivisor":
+                Beatmap.EditorSection.BeatDivisor = value.ParseInt32();
+                return;
+            case "GridSize":
+                Beatmap.EditorSection.GridSize = value.ParseInt32();
+                return;
+            case "TimelineZoom":
+                Beatmap.EditorSection.TimelineZoom = ParseHelper.ToFloat(value);
+                return;
+        }
+
+        var valueString = value.ToString();
+
+        const int emptyBookmarkValue = int.MinValue;
 
         switch (variable)
         {
             case "Bookmarks":
-                Beatmap.EditorSection.Bookmarks = value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(b => Convert.ToInt32(b)).ToArray();
+                Beatmap.EditorSection.Bookmarks = valueString
+                    .AsSpan()
+                    .SplitSelect(',', ParseNonEmpty)
+                    .Where(s => s > emptyBookmarkValue)
+                    .ToArray();
                 break;
-            case "DistanceSpacing":
-                Beatmap.EditorSection.DistanceSpacing = ParseHelper.ToDouble(value);
-                break;
-            case "BeatDivisor":
-                Beatmap.EditorSection.BeatDivisor = Convert.ToInt32(value);
-                break;
-            case "GridSize":
-                Beatmap.EditorSection.GridSize = Convert.ToInt32(value);
-                break;
-            case "TimelineZoom":
-                Beatmap.EditorSection.TimelineZoom = ParseHelper.ToFloat(value);
-                break;
+        }
+
+        static int ParseNonEmpty(ReadOnlySpan<char> s)
+        {
+            if (s.Length is 0)
+                return emptyBookmarkValue;
+
+            return s.ParseInt32();
         }
     }
 
+    private static readonly char[] _metadataTagDelimiters = [',', ' '];
+
     private static void ParseMetadata(string line)
     {
-        int index = line.IndexOf(':');
-        string variable = line.Remove(index).Trim();
-        string value = line.Remove(0, index + 1).Trim();
+        line.AsSpan().SplitOnce(':', out var variable, out var value);
+
+        // quickly rule out the need to convert the span into a new string
+        switch (variable)
+        {
+            case "BeatmapID":
+                Beatmap.MetadataSection.BeatmapID = value.ParseInt32();
+                return;
+            case "BeatmapSetID":
+                Beatmap.MetadataSection.BeatmapSetID = value.ParseInt32();
+                return;
+        }
+
+        var valueString = value.ToString();
 
         switch (variable)
         {
             case "Title":
-                Beatmap.MetadataSection.Title = value;
+                Beatmap.MetadataSection.Title = valueString;
                 break;
             case "TitleUnicode":
-                Beatmap.MetadataSection.TitleUnicode = value;
+                Beatmap.MetadataSection.TitleUnicode = valueString;
                 break;
             case "Artist":
-                Beatmap.MetadataSection.Artist = value;
+                Beatmap.MetadataSection.Artist = valueString;
                 break;
             case "ArtistUnicode":
-                Beatmap.MetadataSection.ArtistUnicode = value;
+                Beatmap.MetadataSection.ArtistUnicode = valueString;
                 break;
             case "Creator":
-                Beatmap.MetadataSection.Creator = value;
+                Beatmap.MetadataSection.Creator = valueString;
                 break;
             case "Version":
-                Beatmap.MetadataSection.Version = value;
+                Beatmap.MetadataSection.Version = valueString;
                 break;
             case "Source":
-                Beatmap.MetadataSection.Source = value;
+                Beatmap.MetadataSection.Source = valueString;
                 break;
             case "Tags":
-                Beatmap.MetadataSection.Tags = value.Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                break;
-            case "BeatmapID":
-                Beatmap.MetadataSection.BeatmapID = Convert.ToInt32(value);
-                break;
-            case "BeatmapSetID":
-                Beatmap.MetadataSection.BeatmapSetID = Convert.ToInt32(value);
+                Beatmap.MetadataSection.Tags = valueString
+                    .Split(
+                        _metadataTagDelimiters,
+                        StringSplitOptions.RemoveEmptyEntries);
                 break;
         }
     }
 
     private static void ParseDifficulty(string line)
     {
-        int index = line.IndexOf(':');
-        string variable = line.Remove(index).Trim();
-        string value = line.Remove(0, index + 1).Trim();
+        line.AsSpan().SplitOnce(':', out var variable, out var value);
 
         switch (variable)
         {
@@ -280,11 +331,13 @@ public static class BeatmapDecoder
 
     private static void ParseEvents(string line)
     {
-        string[] tokens = line.Split(',');
+        var tokenContainer = new ParsedEventTokens();
+        line.SplitToTokenStruct(',', ref tokenContainer);
+        var tokens = tokenContainer.ParsedSpan();
 
         EventType eventType;
 
-        if (Enum.TryParse(tokens[0], out EventType e))
+        if (Enum.TryParse(tokens[0].ToString(), out EventType e))
             eventType = e;
         else if (line.StartsWith(" ") || line.StartsWith("_"))
             eventType = EventType.StoryboardCommand;
@@ -294,14 +347,17 @@ public static class BeatmapDecoder
         switch (eventType)
         {
             case EventType.Background:
-                Beatmap.EventsSection.BackgroundImage = tokens[2].Trim('"');
+                Beatmap.EventsSection.BackgroundImage = tokens[2].Trim('"').ToString();
                 break;
             case EventType.Video:
-                Beatmap.EventsSection.Video = tokens[2].Trim('"');
-                Beatmap.EventsSection.VideoOffset = Convert.ToInt32(tokens[1]);
+                Beatmap.EventsSection.Video = tokens[2].Trim('"').ToString();
+                Beatmap.EventsSection.VideoOffset = tokens[1].Span.ParseInt32();
                 break;
             case EventType.Break:
-                Beatmap.EventsSection.Breaks.Add(new BeatmapBreakEvent(Convert.ToInt32(tokens[1]), Convert.ToInt32(tokens[2])));
+                Beatmap.EventsSection.Breaks.Add(
+                    new BeatmapBreakEvent(
+                        tokens[1].Span.ParseInt32(),
+                        tokens[2].Span.ParseInt32()));
                 break;
             case EventType.Sprite:
             case EventType.Animation:
@@ -314,34 +370,36 @@ public static class BeatmapDecoder
 
     private static void ParseTimingPoints(string line)
     {
-        string[] tokens = line.Split(',');
+        var tokenContainer = new ParsedTimingPointTokens();
+        line.SplitToTokenStruct(',', ref tokenContainer);
+        var tokens = tokenContainer.ParsedSpan();
 
-        int offset = (int)ParseHelper.ToFloat(tokens[0]);
-        double beatLength = ParseHelper.ToDouble(tokens[1]);
+        int offset = (int)ParseHelper.ToFloat(tokens[0].Span);
+        double beatLength = ParseHelper.ToDouble(tokens[1].Span);
         var timeSignature = TimeSignature.SimpleQuadruple;
         var sampleSet = SampleSet.None;
         int customSampleSet = 0;
         int volume = 100;
         bool inherited = true;
-        Effects effects = Effects.None;
+        var effects = Effects.None;
 
         if (tokens.Length >= 3)
-            timeSignature = (TimeSignature)Convert.ToInt32(tokens[2]);
+            timeSignature = (TimeSignature)int.Parse(tokens[2].Span);
 
         if (tokens.Length >= 4)
-            sampleSet = (SampleSet)Convert.ToInt32(tokens[3]);
+            sampleSet = (SampleSet)int.Parse(tokens[3].Span);
 
         if (tokens.Length >= 5)
-            customSampleSet = Convert.ToInt32(tokens[4]);
+            customSampleSet = int.Parse(tokens[4].Span);
 
         if (tokens.Length >= 6)
-            volume = Convert.ToInt32(tokens[5]);
+            volume = int.Parse(tokens[5].Span);
 
         if (tokens.Length >= 7)
-            inherited = !ParseHelper.ToBool(tokens[6]);
+            inherited = !ParseHelper.ToBool(tokens[6].Span);
 
         if (tokens.Length >= 8)
-            effects = (Effects)Convert.ToInt32(tokens[7]);
+            effects = (Effects)int.Parse(tokens[7].Span);
 
         Beatmap.TimingPoints.Add(new TimingPoint
         {
@@ -358,9 +416,9 @@ public static class BeatmapDecoder
 
     private static void ParseColours(string line)
     {
-        int index = line.IndexOf(':');
-        string variable = line.Remove(index).Trim();
-        string value = line.Remove(0, index + 1).Trim();
+        line.AsSpan().SplitOnce(':', out var variable, out var value);
+        variable = variable.Trim();
+        value = value.Trim();
 
         switch (variable)
         {
@@ -378,13 +436,17 @@ public static class BeatmapDecoder
 
     private static void ParseHitObjects(string line)
     {
-        string[] tokens = line.Split(',');
+        var tokenContainer = new ParsedHitObjectTokens();
+        line.SplitToTokenStruct(',', ref tokenContainer);
+        var tokens = tokenContainer.ParsedSpan();
 
-        Vector2 position = new Vector2(ParseHelper.ToFloat(tokens[0]), ParseHelper.ToFloat(tokens[1]));
+        var position = new Vector2(
+            ParseHelper.ToFloat(tokens[0].Span),
+            ParseHelper.ToFloat(tokens[1].Span));
 
-        int startTime = Convert.ToInt32(tokens[2]);
+        int startTime = tokens[2].Span.ParseInt32();
 
-        HitObjectType type = (HitObjectType)int.Parse(tokens[3]);
+        HitObjectType type = (HitObjectType)tokens[3].Span.ParseInt32();
 
         int comboOffset = (int)(type & HitObjectType.ComboOffset) >> 4;
         type &= ~HitObjectType.ComboOffset;
@@ -392,20 +454,31 @@ public static class BeatmapDecoder
         bool isNewCombo = type.HasFlag(HitObjectType.NewCombo);
         type &= ~HitObjectType.NewCombo;
 
-        HitSoundType hitSound = (HitSoundType)Convert.ToInt32(tokens[4]);
+        HitSoundType hitSound = (HitSoundType)tokens[4].Span.ParseInt32();
 
         HitObject hitObject = null;
 
-        string[] extrasSplit = tokens.Last().Split(':');
+        var extrasContainer = new ParsedExtrasTokens();
+        tokens.Last().SplitToTokenStruct(':', ref extrasContainer);
+        var extrasSplit = extrasContainer.ParsedSpan();
+
         int extrasOffset = type.HasFlag(HitObjectType.Hold) ? 1 : 0;
-        Extras extras = tokens.Last().Contains(":") ? new Extras
+        var extras = new Extras();
+        if (tokens.Last().Span.Contains(':'))
         {
-            SampleSet = (SampleSet)Convert.ToInt32(extrasSplit[0 + extrasOffset]),
-            AdditionSet = (SampleSet)Convert.ToInt32(extrasSplit[1 + extrasOffset]),
-            CustomIndex = extrasSplit.Length > 2 + extrasOffset ? Convert.ToInt32(extrasSplit[2 + extrasOffset]) : 0,
-            Volume = extrasSplit.Length > 3 + extrasOffset ? Convert.ToInt32(extrasSplit[3 + extrasOffset]) : 0,
-            SampleFileName = extrasSplit.Length > 4 + extrasOffset ? extrasSplit[4 + extrasOffset] : string.Empty
-        } : new Extras();
+            var importantExtrasTokens = extrasSplit;
+            if (extrasOffset > 0)
+            {
+                importantExtrasTokens = extrasSplit[extrasOffset..];
+            }
+
+            // too much ternary magic
+            extras.SampleSet = (SampleSet)extrasSplit[0].Span.ParseInt32();
+            extras.AdditionSet = (SampleSet)extrasSplit[1].Span.ParseInt32();
+            extras.CustomIndex = extrasSplit.Length > 2 ? extrasSplit[2].Span.ParseInt32() : 0;
+            extras.Volume = extrasSplit.Length > 3 ? extrasSplit[3].Span.ParseInt32() : 0;
+            extras.SampleFileName = extrasSplit.Length > 4 ? extrasSplit[4].ToString() : string.Empty;
+        }
 
         switch (type)
         {
@@ -414,81 +487,290 @@ public static class BeatmapDecoder
                 switch (Beatmap.GeneralSection.Mode)
                 {
                     case Ruleset.Standard:
-                        hitObject = new HitCircle(position, startTime, startTime, hitSound, extras, isNewCombo, comboOffset);
+                        hitObject = new HitCircle(
+                            position, startTime, startTime, hitSound, extras, isNewCombo, comboOffset);
                         break;
                     case Ruleset.Taiko:
-                        hitObject = new TaikoHit(position, startTime, startTime, hitSound, extras, isNewCombo, comboOffset);
+                        hitObject = new TaikoHit(
+                            position, startTime, startTime, hitSound, extras, isNewCombo, comboOffset);
                         break;
                     case Ruleset.Fruits:
-                        hitObject = new CatchFruit(position, startTime, startTime, hitSound, extras, isNewCombo, comboOffset);
+                        hitObject = new CatchFruit(
+                            position, startTime, startTime, hitSound, extras, isNewCombo, comboOffset);
                         break;
                     case Ruleset.Mania:
-                        hitObject = new ManiaNote(position, startTime, startTime, hitSound, extras, isNewCombo, comboOffset);
+                        hitObject = new ManiaNote(
+                            position, startTime, startTime, hitSound, extras, isNewCombo, comboOffset);
                         break;
                 }
                 break;
             }
             case HitObjectType.Slider:
             {
-                CurveType curveType = ParseHelper.GetCurveType(tokens[5].Split('|')[0][0]);
-                List<Vector2> sliderPoints = ParseHelper.GetSliderPoints(tokens[5].Split('|'));
+                // still room for improvement --
+                // this allocates an array and the underlying strings
+                var splitSliderInfo = tokens[5].Span.SplitToStrings('|')
+                    .ToArrayOrExisting();
+                var curveType = ParseHelper.GetCurveType(splitSliderInfo[0][0]);
+                var sliderPoints = ParseHelper.GetSliderPoints(splitSliderInfo);
 
-                int repeats = Convert.ToInt32(tokens[6]);
-                double pixelLength = ParseHelper.ToDouble(tokens[7]);
+                int repeats = tokens[6].Span.ParseInt32();
+                double pixelLength = ParseHelper.ToDouble(tokens[7].Span);
 
                 int endTime = MathHelper.CalculateEndTime(Beatmap, startTime, repeats, pixelLength);
 
                 List<HitSoundType> edgeHitSounds = null;
                 if (tokens.Length > 8 && tokens[8].Length > 0)
                 {
-                    edgeHitSounds = new List<HitSoundType>();
-                    edgeHitSounds = Array.ConvertAll(tokens[8].Split('|'), s => (HitSoundType)Convert.ToInt32(s)).ToList();
+                    edgeHitSounds = tokens[8].Span
+                        .SplitSelect('|', s => (HitSoundType)s.ParseInt32())
+                        .ToList();
                 }
 
                 List<Tuple<SampleSet, SampleSet>> edgeAdditions = null;
                 if (tokens.Length > 9 && tokens[9].Length > 0)
                 {
-                    edgeAdditions = new List<Tuple<SampleSet, SampleSet>>();
-                    foreach (var s in tokens[9].Split('|'))
-                    {
-                        edgeAdditions.Add(new Tuple<SampleSet, SampleSet>((SampleSet)Convert.ToInt32(s.Split(':').First()), (SampleSet)Convert.ToInt32(s.Split(':').Last())));
-                    }
+                    edgeAdditions = tokens[9].Span
+                        .SplitSelect('|', s =>
+                        {
+                            s.SplitOnce(':', out var left, out var right);
+                            var leftSet = (SampleSet)left.ParseInt32();
+                            var rightSet = (SampleSet)right.ParseInt32();
+                            return new Tuple<SampleSet, SampleSet>(leftSet, rightSet);
+                        })
+                        .ToList();
                 }
 
-                if (Beatmap.GeneralSection.Mode == Ruleset.Standard)
-                    hitObject = new Slider(position, startTime, endTime, hitSound, curveType, sliderPoints, repeats,
-                        pixelLength, isNewCombo, comboOffset, edgeHitSounds, edgeAdditions, extras);
-                else if (Beatmap.GeneralSection.Mode == Ruleset.Taiko)
-                    hitObject = new TaikoDrumroll(position, startTime, endTime, hitSound, curveType, sliderPoints,
-                        repeats, pixelLength, edgeHitSounds, edgeAdditions, extras, isNewCombo, comboOffset);
-                else if (Beatmap.GeneralSection.Mode == Ruleset.Fruits)
-                    hitObject = new CatchJuiceStream(position, startTime, endTime, hitSound, curveType, sliderPoints,
-                        repeats, pixelLength, isNewCombo, comboOffset, edgeHitSounds, edgeAdditions, extras);
-                else if (Beatmap.GeneralSection.Mode == Ruleset.Mania)
-                    hitObject = new ManiaHoldNote(position, startTime, endTime, hitSound, extras, isNewCombo, comboOffset);
+                switch (Beatmap.GeneralSection.Mode)
+                {
+                    case Ruleset.Standard:
+                    {
+                        hitObject = new Slider(
+                            position, startTime, endTime, hitSound, curveType,
+                            sliderPoints, repeats, pixelLength, isNewCombo, comboOffset,
+                            edgeHitSounds, edgeAdditions, extras);
+                        break;
+                    }
+                    case Ruleset.Taiko:
+                    {
+                        hitObject = new TaikoDrumroll(
+                            position, startTime, endTime, hitSound, curveType, sliderPoints,
+                            repeats, pixelLength, edgeHitSounds, edgeAdditions, extras,
+                            isNewCombo, comboOffset);
+                        break;
+                    }
+                    case Ruleset.Fruits:
+                    {
+                        hitObject = new CatchJuiceStream(
+                            position, startTime, endTime, hitSound, curveType, sliderPoints,
+                            repeats, pixelLength, isNewCombo, comboOffset, edgeHitSounds,
+                            edgeAdditions, extras);
+                        break;
+                    }
+                    case Ruleset.Mania:
+                    {
+                        hitObject = new ManiaHoldNote(
+                            position, startTime, endTime, hitSound, extras,
+                            isNewCombo, comboOffset);
+                        break;
+                    }
+                }
                 break;
             }
             case HitObjectType.Spinner:
             {
-                int endTime = Convert.ToInt32(tokens[5].Trim());
+                int endTime = tokens[5].Span.Trim().ParseInt32();
 
-                if (Beatmap.GeneralSection.Mode == Ruleset.Standard)
-                    hitObject = new Spinner(position, startTime, endTime, hitSound, extras, isNewCombo, comboOffset);
-                else if (Beatmap.GeneralSection.Mode == Ruleset.Taiko)
-                    hitObject = new TaikoSpinner(position, startTime, endTime, hitSound, extras, isNewCombo, comboOffset);
-                else if (Beatmap.GeneralSection.Mode == Ruleset.Fruits)
-                    hitObject = new CatchBananaRain(position, startTime, endTime, hitSound, extras, isNewCombo, comboOffset);
+                switch (Beatmap.GeneralSection.Mode)
+                {
+                    case Ruleset.Standard:
+                        hitObject = new Spinner(
+                            position, startTime, endTime, hitSound, extras, isNewCombo, comboOffset);
+                        break;
+                    case Ruleset.Taiko:
+                        hitObject = new TaikoSpinner(
+                            position, startTime, endTime, hitSound, extras, isNewCombo, comboOffset);
+                        break;
+                    case Ruleset.Fruits:
+                        hitObject = new CatchBananaRain(
+                            position, startTime, endTime, hitSound, extras, isNewCombo, comboOffset);
+                        break;
+                }
                 break;
             }
             case HitObjectType.Hold:
             {
-                string[] additions = tokens[5].Split(':');
-                int endTime = Convert.ToInt32(additions[0].Trim());
-                hitObject = new ManiaHoldNote(position, startTime, endTime, hitSound, extras, isNewCombo, comboOffset);
+                tokens[5].Span.SplitOnce(':', out var endTimeSpan, out var rest);
+                int endTime = endTimeSpan.Trim().ParseInt32();
+                hitObject = new ManiaHoldNote(
+                    position, startTime, endTime, hitSound, extras, isNewCombo, comboOffset);
                 break;
             }
         }
 
         Beatmap.HitObjects.Add(hitObject);
     }
+}
+
+// token structs
+
+#pragma warning disable IDE0032 // Use auto property
+#pragma warning disable IDE0044 // Add readonly modifier
+#pragma warning disable IDE0251 // Make member 'readonly'
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct ParsedEventTokens : ITokenStruct
+{
+    private const int _length = 3;
+
+    private int _parsedLength;
+
+    private ReadOnlyMemory<char> _0;
+    private ReadOnlyMemory<char> _1;
+    private ReadOnlyMemory<char> _2;
+
+    public readonly int MaxLength => _length;
+    public int ParsedLength
+    {
+        get => _parsedLength;
+        set => _parsedLength = value;
+    }
+
+    public Span<ReadOnlyMemory<char>> MaxLengthSpan()
+    {
+        return CreateSpan(_length);
+    }
+    public Span<ReadOnlyMemory<char>> ParsedSpan()
+    {
+        return CreateSpan(_parsedLength);
+    }
+    public Span<ReadOnlyMemory<char>> CreateSpan(int length)
+    {
+        return MemoryMarshal.CreateSpan(ref _0, length);
+    }
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct ParsedTimingPointTokens : ITokenStruct
+{
+    private const int _length = 8;
+
+    private int _parsedLength;
+
+    private ReadOnlyMemory<char> _0;
+    private ReadOnlyMemory<char> _1;
+    private ReadOnlyMemory<char> _2;
+    private ReadOnlyMemory<char> _3;
+    private ReadOnlyMemory<char> _4;
+    private ReadOnlyMemory<char> _5;
+    private ReadOnlyMemory<char> _6;
+    private ReadOnlyMemory<char> _7;
+
+    public readonly int MaxLength => _length;
+    public int ParsedLength
+    {
+        get => _parsedLength;
+        set => _parsedLength = value;
+    }
+
+    public Span<ReadOnlyMemory<char>> MaxLengthSpan()
+    {
+        return CreateSpan(_length);
+    }
+    public Span<ReadOnlyMemory<char>> ParsedSpan()
+    {
+        return CreateSpan(_parsedLength);
+    }
+    public Span<ReadOnlyMemory<char>> CreateSpan(int length)
+    {
+        return MemoryMarshal.CreateSpan(ref _0, length);
+    }
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct ParsedHitObjectTokens : ITokenStruct
+{
+    private const int _length = 10;
+
+    private int _parsedLength;
+
+    private ReadOnlyMemory<char> _0;
+    private ReadOnlyMemory<char> _1;
+    private ReadOnlyMemory<char> _2;
+    private ReadOnlyMemory<char> _3;
+    private ReadOnlyMemory<char> _4;
+    private ReadOnlyMemory<char> _5;
+    private ReadOnlyMemory<char> _6;
+    private ReadOnlyMemory<char> _7;
+    private ReadOnlyMemory<char> _8;
+    private ReadOnlyMemory<char> _9;
+
+    public readonly int MaxLength => _length;
+    public int ParsedLength
+    {
+        get => _parsedLength;
+        set => _parsedLength = value;
+    }
+
+    public Span<ReadOnlyMemory<char>> MaxLengthSpan()
+    {
+        return CreateSpan(_length);
+    }
+    public Span<ReadOnlyMemory<char>> ParsedSpan()
+    {
+        return CreateSpan(_parsedLength);
+    }
+    public Span<ReadOnlyMemory<char>> CreateSpan(int length)
+    {
+        return MemoryMarshal.CreateSpan(ref _0, length);
+    }
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct ParsedExtrasTokens : ITokenStruct
+{
+    private const int _length = 10;
+
+    private int _parsedLength;
+
+    private ReadOnlyMemory<char> _0;
+    private ReadOnlyMemory<char> _1;
+    private ReadOnlyMemory<char> _2;
+    private ReadOnlyMemory<char> _3;
+    private ReadOnlyMemory<char> _4;
+    private ReadOnlyMemory<char> _5;
+    private ReadOnlyMemory<char> _6;
+    private ReadOnlyMemory<char> _7;
+    private ReadOnlyMemory<char> _8;
+    private ReadOnlyMemory<char> _9;
+
+    public readonly int MaxLength => _length;
+    public int ParsedLength
+    {
+        get => _parsedLength;
+        set => _parsedLength = value;
+    }
+
+    public Span<ReadOnlyMemory<char>> MaxLengthSpan()
+    {
+        return CreateSpan(_length);
+    }
+    public Span<ReadOnlyMemory<char>> ParsedSpan()
+    {
+        return CreateSpan(_parsedLength);
+    }
+    public Span<ReadOnlyMemory<char>> CreateSpan(int length)
+    {
+        return MemoryMarshal.CreateSpan(ref _0, length);
+    }
+}
+
+internal interface ITokenStruct
+{
+    public int MaxLength { get; }
+    public int ParsedLength { get; set; }
+
+    public Span<ReadOnlyMemory<char>> ParsedSpan();
+    public Span<ReadOnlyMemory<char>> MaxLengthSpan();
+    public Span<ReadOnlyMemory<char>> CreateSpan(int length);
 }

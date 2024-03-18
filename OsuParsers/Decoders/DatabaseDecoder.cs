@@ -72,10 +72,10 @@ public static class DatabaseDecoder
 
                 if (db.OsuVersion >= 20140609)
                 {
-                    beatmap.StandardStarRating = r.ReadDictionary<Mods, double>();
-                    beatmap.TaikoStarRating = r.ReadDictionary<Mods, double>();
-                    beatmap.CatchStarRating = r.ReadDictionary<Mods, double>();
-                    beatmap.ManiaStarRating = r.ReadDictionary<Mods, double>();
+                    beatmap.StandardStarRating = r.ReadNonZeroDoubleDictionary<Mods>();
+                    beatmap.TaikoStarRating = r.ReadNonZeroDoubleDictionary<Mods>();
+                    beatmap.CatchStarRating = r.ReadNonZeroDoubleDictionary<Mods>();
+                    beatmap.ManiaStarRating = r.ReadNonZeroDoubleDictionary<Mods>();
                 }
 
                 beatmap.DrainTime = r.ReadInt32();

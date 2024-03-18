@@ -1,3 +1,4 @@
+using Garyon.Extensions;
 using OsuParsers.Enums;
 using OsuParsers.Enums.Beatmaps;
 using System;
@@ -51,10 +52,18 @@ internal static class ParseHelper
         return sliderPoints;
     }
 
-    public static Color ParseColour(string line)
+    public static Color ParseColour(ReadOnlySpan<char> line)
     {
-        int[] colour = line.Split(',').Select(c => Convert.ToInt32(c)).ToArray();
-        return Color.FromArgb(colour.Length == 4 ? colour[3] : 255, colour[0], colour[1], colour[2]);
+        const char delimiter = ',';
+        line.SplitOnce(delimiter, out var r, out var gba);
+        gba.SplitOnce(delimiter, out var g, out var ba);
+        bool hasAlpha = ba.SplitOnce(delimiter, out var b, out var a);
+
+        return Color.FromArgb(
+            hasAlpha ? a.ParseInt32() : 255,
+            r.ParseInt32(),
+            g.ParseInt32(),
+            b.ParseInt32());
     }
 
     public static bool IsLineValid(string line, FileSections currentSection)
@@ -62,7 +71,7 @@ internal static class ParseHelper
         switch (currentSection)
         {
             case FileSections.Format:
-                return line.ToLower().Contains("osu file format v");
+                return line.Contains("osu file format v", StringComparison.OrdinalIgnoreCase);
             case FileSections.General:
             case FileSections.Editor:
             case FileSections.Metadata:
@@ -81,7 +90,19 @@ internal static class ParseHelper
         }
     }
 
-    public static bool ToBool(this string value) => value == "1" || value.ToLower() == "true";
-    public static float ToFloat(this string value) => float.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture);
-    public static double ToDouble(this string value) => double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture);
+    public static bool ToBool(this ReadOnlySpan<char> value)
+    {
+        return value is "1"
+            || value.Equals("true", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static float ToFloat(this ReadOnlySpan<char> value)
+    {
+        return float.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture);
+    }
+
+    public static double ToDouble(this ReadOnlySpan<char> value)
+    {
+        return double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture);
+    }
 }

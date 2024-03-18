@@ -66,11 +66,28 @@ internal class SerializationReader : BinaryReader
         int count = ReadInt32();
         if (count < 0)
             return null;
-        var d = new Dictionary<T, U>();
+        var d = new Dictionary<T, U>(count);
         for (int i = 0; i < count; i++)
         {
             var key = (T)ReadObject();
             var value = (U)ReadObject();
+            d[key] = value;
+        }
+
+        return d;
+    }
+
+    public Dictionary<T, double> ReadNonZeroDoubleDictionary<T>()
+    {
+        int count = ReadInt32();
+        if (count < 0)
+            return null;
+        var d = new Dictionary<T, double>();
+        for (int i = 0; i < count; i++)
+        {
+            var key = (T)ReadObject();
+            var doubleTypeByte = ReadByte();
+            var value = ReadDouble();
             d[key] = value;
         }
 

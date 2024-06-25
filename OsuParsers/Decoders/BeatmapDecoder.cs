@@ -153,6 +153,7 @@ public static class BeatmapDecoder
     private static void ParseGeneral(string line)
     {
         line.AsSpan().SplitOnce(':', out var variable, out var value);
+        value = value.Trim();
 
         switch (variable)
         {
@@ -198,7 +199,7 @@ public static class BeatmapDecoder
         switch (variable)
         {
             case "AudioFilename":
-                Beatmap.GeneralSection.AudioFilename = valueString;
+                Beatmap.GeneralSection.AudioFilename = valueString.Trim();
                 break;
             case "SampleSet":
                 Beatmap.GeneralSection.SampleSet = Enum.Parse<SampleSet>(valueString);
@@ -209,6 +210,7 @@ public static class BeatmapDecoder
     private static void ParseEditor(string line)
     {
         line.AsSpan().SplitOnce(':', out var variable, out var value);
+        value = value.Trim();
 
         // quickly rule out the need to convert the span into a new string
         switch (variable)
@@ -256,6 +258,7 @@ public static class BeatmapDecoder
     private static void ParseMetadata(string line)
     {
         line.AsSpan().SplitOnce(':', out var variable, out var value);
+        value = value.Trim();
 
         // quickly rule out the need to convert the span into a new string
         switch (variable)
@@ -305,6 +308,7 @@ public static class BeatmapDecoder
     private static void ParseDifficulty(string line)
     {
         line.AsSpan().SplitOnce(':', out var variable, out var value);
+        value = value.Trim();
 
         switch (variable)
         {

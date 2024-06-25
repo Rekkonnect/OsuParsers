@@ -8,7 +8,8 @@ namespace OsuParsers.Helpers;
 
 internal static class Extensions
 {
-    private static NumberFormatInfo NumFormat => new CultureInfo(@"en-US", false).NumberFormat;
+    private static NumberFormatInfo NumFormat { get; }
+        = new CultureInfo(@"en-US", false).NumberFormat;
 
     public static int ToInt32(this bool value) => value ? 1 : 0;
     public static string Format(this float value) => value.ToString(NumFormat);

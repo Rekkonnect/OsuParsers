@@ -92,6 +92,7 @@ internal static class ParseHelper
 
     public static bool ToBool(this ReadOnlySpan<char> value)
     {
+        value = value.Trim();
         return value is "1"
             || value.Equals("true", StringComparison.OrdinalIgnoreCase);
     }

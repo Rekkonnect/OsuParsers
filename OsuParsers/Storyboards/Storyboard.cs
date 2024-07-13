@@ -41,4 +41,15 @@ public class Storyboard
     {
         File.WriteAllLines(path, StoryboardEncoder.Encode(this));
     }
+
+    public void Clear()
+    {
+        BackgroundLayer.Clear();
+        FailLayer.Clear();
+        PassLayer.Clear();
+        ForegroundLayer.Clear();
+        OverlayLayer.Clear();
+        SamplesLayer.Clear();
+        Variables.Clear();
+    }
 }

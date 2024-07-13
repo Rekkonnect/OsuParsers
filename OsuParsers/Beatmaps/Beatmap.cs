@@ -70,4 +70,9 @@ public class Beatmap
     {
         File.WriteAllLines(path, BeatmapEncoder.Encode(this));
     }
+
+    public void Save(FileInfo file)
+    {
+        Save(file.FullName);
+    }
 }

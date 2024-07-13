@@ -477,11 +477,11 @@ public static class BeatmapDecoder
             }
 
             // too much ternary magic
-            extras.SampleSet = (SampleSet)extrasSplit[0].Span.ParseInt32();
-            extras.AdditionSet = (SampleSet)extrasSplit[1].Span.ParseInt32();
-            extras.CustomIndex = extrasSplit.Length > 2 ? extrasSplit[2].Span.ParseInt32() : 0;
-            extras.Volume = extrasSplit.Length > 3 ? extrasSplit[3].Span.ParseInt32() : 0;
-            extras.SampleFileName = extrasSplit.Length > 4 ? extrasSplit[4].ToString() : string.Empty;
+            extras.SampleSet = (SampleSet)importantExtrasTokens[0].Span.ParseInt32();
+            extras.AdditionSet = (SampleSet)importantExtrasTokens[1].Span.ParseInt32();
+            extras.CustomIndex = importantExtrasTokens.Length > 2 ? importantExtrasTokens[2].Span.ParseInt32() : 0;
+            extras.Volume = importantExtrasTokens.Length > 3 ? importantExtrasTokens[3].Span.ParseInt32() : 0;
+            extras.SampleFileName = importantExtrasTokens.Length > 4 ? importantExtrasTokens[4].ToString() : string.Empty;
         }
 
         switch (type)

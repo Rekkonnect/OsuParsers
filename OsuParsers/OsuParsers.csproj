@@ -12,6 +12,8 @@
     <FileVersion>1.8.0.0</FileVersion>
     <PackageVersion>1.8.0</PackageVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PackageId>Rekkon.OsuParsers</PackageId>
+    <RepositoryUrl>https://github.com/Rekkonnect/OsuParsers</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Garyon" Version="0.4.1" />
